@@ -1,0 +1,108 @@
+#!/bin/bash
+
+# what - A superset of the which command that follows symlinks
+# Usage: what [-f] <command>
+#   -f    Find and display all occurrences in $PATH
+
+MAX_ITERATIONS=10
+
+# Function to trace a single path through symlinks
+trace_path() {
+    local CURRENT_PATH="$1"
+    local ITERATION=0
+    
+    while [ $ITERATION -lt $MAX_ITERATIONS ]; do
+        ITERATION=$((ITERATION + 1))
+        
+        # Check if the current path is a symlink
+        if [ -L "$CURRENT_PATH" ]; then
+            # It's a symlink - show it
+            echo "Link: $CURRENT_PATH ->"
+            
+            # Get the link target (what this symlink points to)
+            local LINK_TARGET=$(readlink "$CURRENT_PATH")
+            
+            # Resolve to absolute path for next iteration
+            local DIR=$(dirname "$CURRENT_PATH")
+            local NEXT_PATH
+            
+            # If relative path, make it absolute
+            if [ "${LINK_TARGET:0:1}" != "/" ]; then
+                NEXT_PATH="$DIR/$LINK_TARGET"
+            else
+                NEXT_PATH="$LINK_TARGET"
+            fi
+            
+            CURRENT_PATH="$NEXT_PATH"
+        else
+            # It's a regular file (not a symlink)
+            echo "File: $CURRENT_PATH"
+            return 0
+        fi
+    done
+    
+    # If we reached max iterations
+    return 0
+}
+
+# Parse flags
+FIND_ALL=false
+
+while getopts "f" opt; do
+    case $opt in
+        f)
+            FIND_ALL=true
+            ;;
+        ?)
+            echo "Usage: what [-f] <command>"
+            echo "  -f    Find and display all occurrences in \$PATH"
+            exit 1
+            ;;
+    esac
+done
+
+shift $((OPTIND - 1))
+
+# Check if argument is provided
+if [ $# -eq 0 ]; then
+    echo "Usage: what [-f] <command>"
+    echo "  -f    Find and display all occurrences in \$PATH"
+    exit 1
+fi
+
+TARGET="$1"
+
+if [ "$FIND_ALL" = true ]; then
+    # Find all occurrences in PATH
+    FIRST=true
+    IFS=':' read -ra PATH_DIRS <<< "$PATH"
+    
+    for DIR in "${PATH_DIRS[@]}"; do
+        FULL_PATH="$DIR/$TARGET"
+        
+        # Check if file exists (could be symlink or regular file)
+        if [ -e "$FULL_PATH" ] || [ -L "$FULL_PATH" ]; then
+            # Print blank line between entries (except before first)
+            if [ "$FIRST" = true ]; then
+                FIRST=false
+            else
+                echo ""
+            fi
+            
+            trace_path "$FULL_PATH"
+        fi
+    done
+else
+    # Original behavior: find first match using 'which'
+    CURRENT_PATH=$(which "$TARGET" 2>/dev/null)
+    
+    # Check if command was found
+    if [ -z "$CURRENT_PATH" ]; then
+        echo "what: no $TARGET in ($PATH)"
+        exit 1
+    fi
+    
+    trace_path "$CURRENT_PATH"
+fi
+
+exit 0
