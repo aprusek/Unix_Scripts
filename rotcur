@@ -1,0 +1,38 @@
+#!/bin/sh
+
+TRUE=`true`
+
+case "$1" in
+	o)
+	  while $TRUE
+ 	  do
+             echo -n "."
+             sleep 1
+             echo -n "o"
+             sleep 1
+             echo -n "0"
+             sleep 1
+             echo -n "O"
+             sleep 1
+             echo -n "0"
+             sleep 1
+             echo -n "o"
+             sleep 1
+	 done
+	   ;; 
+
+
+	*)
+           while $TRUE
+           do
+             echo -n "|"
+             sleep 1
+             echo -n "/"
+             sleep 1
+             echo -n "-"
+             sleep 1
+             echo -n "\"
+             sleep 1
+           done
+	  ;;
+esac

@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+
+PATH=/usr/X11/bin:/usr/bin:/bin:/usr/bin/X11:/usr/openwin/bin:/usr/ucb:/usr/local/bin:$HOME/bin
+export PATH
+
+XPATH=/usr/X11/bin:/usr/openwin/bin:/usr/local/X11/bin:/usr/bin/X11
+export XPATH
+
+SIFT="/usr/local/lib/site.sift"
+export SIFT
+
+#
+# Set REMOTE variable to be used by X client to connect to
+# where we are
+#
+
+if [ -z "$2" ]
+then
+  echo Usage: `basename $0` '[host|MACRO] command [args...]'
+  exit
+fi
+
+HOST=$1
+shift
+
+COMMAND="$*"
+
+for i in $HOST
+do
+  # echo "# Target : " $i >&2
+  if (echo $i | grep [A-Z] > /dev/null)
+  then
+    # echo "# Expand : " # $i >&2
+    echo $i: 
+    HOSTS=`grep "("$i" =" $SIFT | sed -e 's/)//g' -e '/^#/d' | head -1 | cut -f2 -d=`
+    $0 "$HOSTS" $COMMAND
+  else
+    rsh $i "PATH=${PATH} $COMMAND " 2>&1 | sed -e "s/^/$i:/"
+  fi
+done

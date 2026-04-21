@@ -1,0 +1,41 @@
+#!/bin/sh
+
+prog="`basename $0`[$$]"
+COMMAND="$1"
+
+COUNT=0
+
+#
+# Retry every 30 seconds
+#
+RETRY=30
+
+shift
+
+while true
+do
+  if [ "$COUNT" -gt 100 ]
+  then
+    logger -p user.err -t "$prog" "$command too many restarts."
+    break
+  fi
+
+  COUNT=`expr "$COUNT" + 1
+
+  $command "$@" &
+  pid=$!
+  trap "kill $pid ; exit 0" 1 2 3 15
+  wait $!
+
+  #
+  # Log a message that it has been killed
+  #
+  logger -p user.err -t "$prog" "$command restarted count = $COUNT"
+
+  #
+  # We do not want to try too often to run the command
+  #
+  sleep $RETRY
+done
+
+rm $COUNT_FILE

@@ -1,0 +1,107 @@
+#!/bin/sh
+# rekill -	Kill processes matching a regular expression
+#
+# $Id: rekill,v 1.1 1996/04/11 03:25:57 wwcoot Exp $
+# $Source: /src/usr/local/bin/rekill/rekill,v $
+#
+# SYNOPSIS
+#	rekill [-v] [-signal] regexp
+#
+# DESCRIPTION
+#	Sends signals using kill(1) to any processes matching the
+#	specified regular expression, from a "ps -ef" listing.
+#
+#	-v	Verify.  Lists matching processes and asks for
+#		verification before executing the kill.
+#
+#	-signal	A mnemonic or numeric signal, as used by kill(1).
+#
+#	regexp	A regular expression.  This is passed to sed(1).
+#
+
+PROG=`basename $0`
+USAGE="usage: $PROG [-v] [-signal] regexp"
+
+while [ $# -gt 1 ]
+do
+	case $1 in
+	-v )
+		VERIFY=true ;;
+	-[0-9A-Z]* )
+		SIGNAL=$1 ;;
+	-n )
+		DEBUG="echo" ;;
+	esac
+	shift
+done
+case $#.$1 in
+*.-* )	echo $USAGE >&2 ; exit 1 ;;
+1.* )	;;
+* )	echo $USAGE >&2 ; exit 1 ;;
+esac
+
+TMP=/tmp/$PROG.$$
+
+#
+# There are some "-e" bits to exclude the sed process and this shell
+# process
+#
+#	sed -n -e 1p -e '/__NONOTME__/d' -e '/<zombie>/d' -e "/^ *[^ ]* *$$ /d" -e "/$1/p" \
+
+if [ "$LOGNAME" = "root" ]
+then
+  FILTER=""
+else
+  FILTER="/$LOGNAME/p "
+fi
+
+# sed -n -e 1p
+
+ps -ef |		\
+	sed -n 		\
+	-e '/__NONOTME__/d'	\
+	-e '/<zombie>/d'	\
+	-e "/^ *$$ /d"		\
+	-e "/rekill/d"		\
+	-e "/$1/p"		\
+	> $TMP
+
+if [ -n "$VERIFY" ]; then
+	#
+	# How to echo without carriage-return?
+	#
+	ab=`echo -n a ; echo b`
+	case $ab in
+	'ab' )	n="-n" ; c="" ;;
+	* )	n="" ; c="\c" ;;
+	esac
+
+	cat $TMP 
+	echo $n "Kill the above processes? $c"
+	read INPUT
+	case $INPUT in
+	y | Y | yes | YES ) ;;
+	* )
+		rm -f $TMP 2>/dev/null
+		exit 0
+		;;
+	esac
+fi
+
+PIDS=`sed -e 's/^ *[^ ]* *//' -e 's/ .*$//' $TMP`
+#PIDS=`sed -e 1d -e 's/^ *[^ ]* *//' -e 's/ .*$//' $TMP`
+#PIDS=`sed -e 1d -e 's/^..\(......\).*/\1/' $TMP`
+#PIDS=`sed -e 1d -e 's/ *\([0-9]*\).*/\1/' $TMP`
+
+echo $PIDS
+case $PIDS in
+'' )
+	echo "$PROG: no matching processes found" >&2
+	rm -f $TMP 2>/dev/null
+	exit 1
+	;;
+esac
+
+$DEBUG kill $SIGNAL $PIDS
+
+rm -f $TMP 2>/dev/null

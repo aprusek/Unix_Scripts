@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+
+ARGS="$*"
+
+if [ -z "$ARGS" ]
+then
+  ARGS="$LOGNAME - `pwd`"
+fi
+
+#SHORT=`echo $1 | cut -c1-8`
+SHORT=`echo $1 | cut -c1-32`
+
+#/bin/echo "\033]0;$ARGS\007\c"
+
+/bin/echo -e "\033]1;$SHORT\007\c"
+/bin/echo -e "\033]2;$ARGS\007\c"

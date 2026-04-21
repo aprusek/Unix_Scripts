@@ -1,0 +1,32 @@
+#!/bin/sh
+
+if [ "$1" = "-v" ]
+then
+  MODE=voice
+  shift
+fi
+
+if [ -z "$1" ]
+then
+  c=3
+else
+  c=$1
+fi
+
+for i in `seq $c -1 1`
+do
+  if [ "$VOICE" = "voice" ]
+  then
+    SOUND=/export/sound/Cards/ta${i}.wav
+    if [ -e $SOUND ]
+    then
+      play $SOUND
+    else
+      play /export/sound/wavs/ting.wav
+    fi
+  else
+    /bin/echo -n ${i}...
+  fi
+  sleep 1
+done
+echo

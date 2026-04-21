@@ -1,0 +1,27 @@
+# Sift file
+#
+#
+
+(ALL = SUNOS OSF IRIX SCO AIX LINUX BSD AUX HPUX TRU64 OSF XENIX UNICOS MACOS GROUP ) 
+
+(GROUP = SUBGROUP1 SUBGROUP2 host1 )
+
+(SUBGROUP1 = host2 host3 host4 )
+
+(SUBGROUP2 = host2 host5 host6 )
+
+(SUBGROUP3 = host3 host5 host7 )
+
+(SUNOS = )
+(OSF = ) 
+(IRIX = )
+(SCO = )
+(AIX = )
+(LINUX = )
+(BSD = )
+(AUX = )
+(HPUX = )
+(TRU64 = OSF )
+(XENIX = )
+(UNICOS = )
+(MACOS = )

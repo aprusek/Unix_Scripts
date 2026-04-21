@@ -1,0 +1,49 @@
+#!/bin/sh
+
+case $1 in
+  -w)
+    OPTION="WAIT"
+    shift
+    ;;
+  --help)
+    echo Usage: $0 [-w] command
+    echo "       " -w wait until TIMEOUT
+    echo "       " uses environment variable TIMEOUT
+    exit 0
+    ;;
+  *)
+    ;;
+esac
+
+COMMAND=$1
+
+#
+# Let process live for 30 seconds
+#
+if [ -z "$TIMEOUT" ]
+then
+  TIMEOUT=30
+fi
+
+shift
+
+$COMMAND "$@" &
+COMMANDPID=$!
+trap "kill $PID ; exit 0" 1 2 3 15
+
+#
+# Dispatch alarm
+#
+if [ "$OPTION" = "WAIT" ]
+then
+  sleep $TIMEOUT
+  kill -9 $COMMANDPID >/dev/null 2>&1
+else
+  sh -c "sleep $TIMEOUT ; kill -14 $COMMANDPID" </dev/null >/dev/null 2>&1 &
+  ALARMPID=$!
+  wait $COMMANDPID 2>/dev/null
+  STATUS=$?
+  kill -HUP $ALARMPID 2>/dev/null
+fi
+
+exit $STATUS
